@@ -1,0 +1,6 @@
+# auto-generated files
+
+include/log-events.def
+include/runtime-offsets.def
+misc/event-logging.pml
+misc/logging.pml
