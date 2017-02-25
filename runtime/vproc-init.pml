@@ -31,6 +31,8 @@ structure VProcInit (* :
 
     _primcode (
 
+#ifndef DIRECT_STYLE
+
     (* bootstrap the vproc for purely-sequential execution *)
       define @bootstrap-sequential ( / exh : exh) : () =
           let vp : vproc = host_vproc
@@ -57,6 +59,43 @@ structure VProcInit (* :
 	  do vpstore(VP_DUMMYK, vp, dummyK)
 	  return()
 	;
+
+#else
+
+  (* bootstrap the vproc for purely-sequential execution *)
+      define @bootstrap-sequential ( / exh : exh) : () =
+          let vp : vproc = host_vproc
+        
+        (**** vp->schedCont ****)
+    fun schedCont (k : PT.fiber) : unit = 
+        throw k(UNIT)
+    do vpstore(VP_SCHED_CONT, vp, schedCont)
+
+      (*    let fls : FLS.fls = FLS.@new(UNIT / exh)
+          do vpstore(CURRENT_FLS, vp, fls)*)
+      
+        (**** vp->shutdownCont ****)
+          fun shutdownCont (_ : unit) : unit =
+       do ccall VProcExit(vp)
+             return (UNIT)
+
+          let shutdownCont : fun(unit / -> unit) = promote(shutdownCont)
+          do vpstore(VP_SHUTDOWN_CONT, vp, shutdownCont)
+
+  (**** vp->currentFLS ****)
+    (*let fls : FLS.fls = FLS.@new(UNIT / exh)
+    let fls : FLS.fls = promote(fls)
+    do vpstore(CURRENT_FLS, vp, fls)*)
+  (**** vp->dummyK ****)
+    (*cont dummyK (x : unit) = 
+        let _ : unit = SchedulerAction.@stop()
+        return()
+    let dummyK : PT.fiber = promote(dummyK)
+    do vpstore(VP_DUMMYK, vp, dummyK)*)
+    return()
+  ;
+
+#endif
 
     (* bootstrap the vprocs
      *   - mkAct is a function that takes a vproc and returns the top-level scheduler
