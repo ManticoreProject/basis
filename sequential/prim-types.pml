@@ -38,7 +38,13 @@ structure PrimTypes =
       | BLOCK of fiber			(* the argument is the resumption fiber. *)
 
     _primcode (
-      typedef sched_act = cont(signal);
+
+#ifdef DIRECT_STYLE
+    typedef sched_act = fun(signal / -> any);
+#else
+    typedef sched_act = cont(signal);
+#endif
+
     )
 
   (* scheduler actions are continuations that consume a signal and perform a context switch *)

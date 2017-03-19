@@ -4,7 +4,11 @@
  * All rights reserved.
  *)
 
-prim-types.pml
+ann "cpp" "../include/prim.def"
+in
+  prim-types.pml
+end
+
 order.pml
 option.pml
 int.pml

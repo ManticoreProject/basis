@@ -109,14 +109,25 @@ structure SchedulerAction (* :
     (* forward a signal to the host vproc; we assume that signals are masked *)
       define inline @forward-from-atomic (vp : vproc, sg : PT.signal) noreturn =
 	  let act : PT.sched_act = @pop-act(vp)
+#ifdef DIRECT_STYLE
+      let _ : any = apply act (sg)
+      return () (* unreachable *)
+#else
 	  throw act (sg)
+#endif
+	  
 	;
 
     (* forward a signal to the host vproc *)
       define inline @forward (sg : PT.signal) noreturn =
 	  let vp : vproc = @atomic-begin ()
 	  let act : PT.sched_act = @pop-act(vp)
+#ifdef DIRECT_STYLE
+      let _ : any = apply act (sg)
+      return () (* unreachable *)
+#else
 	  throw act (sg)
+#endif
 	;
 
     (* stop the current fiber; we assume that signals are masked *)
