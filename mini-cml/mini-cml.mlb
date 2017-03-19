@@ -1,0 +1,5 @@
+
+ann "cpp" "../include/prim.def,../include/runtime-offsets.def,../include/debug.def" in
+	prim-event.pml
+	alt-prim-chan.pml
+end
