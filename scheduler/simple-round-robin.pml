@@ -81,40 +81,37 @@ structure RoundRobin =
       }
 
      *)
-      fun waitForWork () : () =
-        cont workIsAvailable () = return ()  (* leave the waitForWork loop *)
-      
-        fun lp1 (i : int) : () =
-          let w : bool = VProcQueue.@poll-landing-pad-in-atomic (self)
 
-          do case w
-            of true => throw workIsAvailable ()
-             | false => return ()
+      fun checkLandingPad (i : int) : () = 
+        
+        fun lp2 (j : int) : () = 
+            if I32Gt (j, 500) then return () else apply lp2 (I32Add (j, 1))
+
+        let w : bool = VProcQueue.@poll-landing-pad-in-atomic (self)
+
+          case w
+            of true => return () 
+             | false => (* spin for a bit *)
+                       do Pause ()
+                       do apply lp2 (0)
+                       (* try again *)
+                       if I32Gt (i, 2000) then
+                         return ()
+                       else 
+                         apply checkLandingPad (I32Add (i, 1))
           end
 
-          do Pause ()
-
-          fun lp2 (j : int) : () = 
-            if I32Gt (j, 500) then return () else apply lp2 (I32Add (j, 1))
-          
-          do apply lp2 (0)
-
-          if I32Gt (i, 2000) then
-            return () 
-          else 
-            apply lp1 (I32Add (i, 1))
-
-        do apply lp1 (0)
+      fun waitForWork () : () =      
+        do apply checkLandingPad (0)
 
         let w : bool = apply wakeupSleepingThreads ()
       
-        do case w
-          of true => throw workIsAvailable ()
-           | false => return ()
+        case w
+          of true => return ()
+           | false => (* sleep and then try again *)
+                    let _ : bool = VProc.@nanosleep-in-atomic (self, 1000000:long)
+                    apply waitForWork ()
         end
-      
-        let _ : bool = VProc.@nanosleep-in-atomic (self, 1000000:long)
-                  apply waitForWork ()
       (* end waitForWork *)
 
       (* pick the next thread to run *)
@@ -186,6 +183,6 @@ structure RoundRobin =
 
     val roundRobin : unit -> unit = _prim (@round-robin)
     val _ = roundRobin()
-    val _ = DEBUG("scheduler utils: initialized round-robin scheduler")
+    val _ = DEBUG("scheduler utils: initialized simple-round-robin scheduler")
 
   end
