@@ -297,7 +297,8 @@ structure PrimChan (*: sig
 			  do @chan-enqueue-recv (ch, flg, self, fls, recvK)
 			  SPIN_UNLOCK(ch, CH_LOCK)
 			  (* in *)
-			    SchedulerAction.@stop-from-atomic(self)
+			    do SchedulerAction.@stop-from-atomic(self)
+			    return (UNIT) (* unreachable *)
 	    (* in *)
 	      apply tryLp ()
 	  ;
@@ -361,7 +362,8 @@ structure PrimChan (*: sig
 			    do @chan-enqueue-send (ch, flg, msg, self, fls, sendK)
 			    SPIN_UNLOCK(ch, CH_LOCK)
 			    (* in *)
-			      SchedulerAction.@stop-from-atomic(self)
+			      do SchedulerAction.@stop-from-atomic(self)
+			      return (UNIT) (* unreachable *)
 	      (* in *)
 		apply tryLp ()
 	;
