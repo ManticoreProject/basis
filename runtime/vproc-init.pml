@@ -31,6 +31,14 @@ structure VProcInit (* :
 
     _primcode (
 
+
+#ifdef DIRECT_STYLE
+      
+      extern void* NewStack(void *, void *) __attribute__((alloc));
+
+#endif
+
+
 #ifndef DIRECT_STYLE
 
     (* bootstrap the vproc for purely-sequential execution *)
@@ -152,11 +160,16 @@ structure VProcInit (* :
             let schedCont : fun(PT.fiber / -> ) = promote(schedCont)
             do vpstore(VP_SCHED_CONT, vp, schedCont)
 
-              (**** vp->dummyK ****)  (* TODO is this passed to schdCont more than once? *)
-            cont dummyK (x : unit) = 
-              let _ : unit = SchedulerAction.@stop()
-              return()
+              (**** vp->dummyK ****)  
+              (* dummyK field is treated as a multi-shot continuation in RTS *)
+            fun initDummyK (_ : unit) : unit =
+              let dummyK : PT.fiber = ccall NewStack (vp, initDummyK)
+              let dummyK : PT.fiber = promote(dummyK)
+              do vpstore(VP_DUMMYK, vp, dummyK)
+              do SchedulerAction.@stop()
+              return (UNIT)
 
+            let dummyK : PT.fiber = ccall NewStack (vp, initDummyK)
             let dummyK : PT.fiber = promote(dummyK)
             do vpstore(VP_DUMMYK, vp, dummyK)
 
