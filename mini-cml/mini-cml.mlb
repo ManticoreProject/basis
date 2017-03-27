@@ -2,6 +2,7 @@
 ann "cpp" "../include/prim.def,../include/runtime-offsets.def,../include/debug.def" in
 	threads.pml
 	prim-event.pml
+	cvar.pml
 	alt-prim-chan.pml
 	(* prim-chan.pml *)
 end
