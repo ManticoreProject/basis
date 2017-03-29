@@ -746,13 +746,13 @@ structure IntRope = struct
 	   val (p, u) = splitCursor (f, b) (cat2, empty ()) cur
 	   val mid = numUnprocessedRed cur div 2
 	   val (u1, u2) = splitAtIx2 (u, mid - 1) 
-	     handle _ => let
+	     (* handle _ => let
                val msg = Int.toString (mid-1) ^ " " ^
 			 Int.toString (length u) ^ " " ^
 			 Int.toString (numUnprocessedRed cur)
                in
                  failwith msg
-	       end
+	       end *)
            in
 	     f (p, f (RT.par2 (fn () => red u1, fn () => red u2)))
            end)

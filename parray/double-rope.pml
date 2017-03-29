@@ -732,10 +732,12 @@ fun reduceSequential f b rp =
        | More cur => let
 	   val (p, u) = splitCursor (f, b) (cat2, empty ()) cur
 	   val mid = numUnprocessedRed cur div 2
-	   val (u1, u2) = splitAtIx2 (u, mid - 1) handle _ => 
+	   val (u1, u2) = splitAtIx2 (u, mid - 1) 
+      (* handle _ => 
              failwith (itos (mid-1) ^ " " ^
 		       itos (length u) ^ " " ^
 		       itos (numUnprocessedRed cur))
+      *)
            in
 	     f (p, f (RT.par2 (fn () => red u1, fn () => red u2)))
            end)

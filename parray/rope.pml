@@ -578,7 +578,8 @@ fun tabulateLTS PPT (intv, f) = let
 	       splitAt intervalLength encodeCur cursorAtIxIntv id id (unzipCursor cur') mid
 	 val (rp1, rp2) = RT.par2 (fn () => t cur1, fn () => t cur2)
 	 in
-	   join decodeRopeTab id rootU (rp1, rp2, reb) handle e => (print "Caught exception in join\n"; raise e)
+	   join decodeRopeTab id rootU (rp1, rp2, reb) 
+     (* handle e => (print "Caught exception in join\n"; raise e) *)
          end)
   in
     t (intv, GCTop)
@@ -666,7 +667,8 @@ fun tabulateLTS PPT (intv, f) = let
 	       splitAt intervalLength encodeCur cursorAtIxIntv id id (unzipCursor cur') mid
 	 val (rp1, rp2) = RT.par2 (fn () => t cur1, fn () => t cur2)
 	 in
-	   join decodeRopeTab id rootU (rp1, rp2, reb) handle e => (print "Caught exception in join\n"; raise e)
+	   join decodeRopeTab id rootU (rp1, rp2, reb) 
+     (* handle e => (print "Caught exception in join\n"; raise e) *)
          end)
   in
     t (intv, GCTop)
@@ -838,7 +840,8 @@ fun reduceLTS PPT f b rp = let
      | More cur => let
 	 val (p, u) = splitCursor (f, b) (cat2, empty ()) cur
 	 val mid = numUnprocessedRed cur div 2
-	 val (u1, u2) = splitAtIx2 (u, mid - 1) handle _ => raise Fail (Int.toString (mid-1)^" "^Int.toString (length u)^" " ^Int.toString (numUnprocessedRed cur))
+	 val (u1, u2) = splitAtIx2 (u, mid - 1) 
+   (* handle _ => raise Fail (Int.toString (mid-1)^" "^Int.toString (length u)^" " ^Int.toString (numUnprocessedRed cur)) *)
          in
 	   f (p, f (RT.par2 (fn () => red u1, fn () => red u2)))
          end)

@@ -417,7 +417,9 @@ fun join decode finish zipCursor (rp1, rp2, (ls, ds, mds, n1, n2, l1, l2)) = let
   val ropes = rps1 @ (m::nil) @ rps2 
   in
     case ropes
-     of rp::rs => (zipCursor (rp, (ls, rs, ds)) handle e => (check2(ls, rs, ds); raise e))
+     of rp::rs => (zipCursor (rp, (ls, rs, ds)) 
+      (* handle e => (check2(ls, rs, ds); raise e) *)
+        )
       | _ => failwith "join"
   end
   
