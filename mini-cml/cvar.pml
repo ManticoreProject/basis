@@ -64,13 +64,6 @@ structure CVar (*: sig
 		   of nil => return (UNIT)
 		    | CONS(hd : waiter, tl : List.list) =>
 			let flg : PEvt.event_state = #0(hd)
-(* NOTE: this code doesn't work; probably because of a bug in the handling of BCAS in the
- * code generator.
-			do if BCAS(&0(flg), PEvt.WAITING, PEvt.SYNCHED)
-			    then (* enqueue waiting thread *)
-			      VProcQueue.@enqueue-ready-in-atomic (self, #1(item), #2(item), #3(item))
-			    else return()
-*)
 			let sts : PEvt.event_status = CAS(&0(flg), PEvt.WAITING, PEvt.SYNCHED)
 			do if Equal(sts, PEvt.WAITING)
 			    then  (* enqueue the waiting thread *)
@@ -105,32 +98,9 @@ structure CVar (*: sig
 		      let l : list = promote (l)
 		      do UPDATE(CV_WAITING, cv, l)
 		      SPIN_UNLOCK(cv, CV_LOCK)
-		      SchedulerAction.@stop-from-atomic (self)
+		      do SchedulerAction.@stop-from-atomic (self)
+		      return (UNIT)
 		end
-	  ;
-
-	define inline @cvar-wait-evt (cv : cvar / _ : exh) : PEvt.pevent =
-	    fun pollFn () : bool = return (SELECT(CV_STATE, cv))
-	    fun doFn (_ : vproc, k : PT.fiber / _ : exh) : () = throw k (UNIT)
-	    fun blockFn (self : vproc, flg : PEvt.event_state, fls : FLS.fls, k : cont(unit) / _ : exh) : () =
-		SPIN_LOCK(cv, CV_LOCK)
-		case SELECT(CV_STATE, cv)
-		 of true =>
-		    SPIN_UNLOCK(cv, CV_LOCK)
-		    do SchedulerAction.@atomic-end (self)
-		    throw k (UNIT)
-		  | false =>
-		    let flg : PEvt.event_state = alloc (PEvt.WAITING)
-		    let fls : FLS.fls = FLS.@get()
-		    let item : waiter = alloc (flg, self, fls, k)
-		    let l : list = CONS(item, SELECT(CV_WAITING, cv))
-		    let l : list = promote (l)
-		    do UPDATE(CV_WAITING, cv, l)
-		    SPIN_UNLOCK(cv, CV_LOCK)
-		    SchedulerAction.@stop-from-atomic (self)
-		end
-	  (* in *)
-	    return (PEvt.BEVT(pollFn, doFn, blockFn))
 	  ;
       )
 
@@ -138,7 +108,6 @@ structure CVar (*: sig
 
     val new	: unit -> cvar = _prim(@cvar-new)
     val signal	: cvar -> unit = _prim(@cvar-signal)
-    val waitEvt	: cvar -> unit PEvt.pevent = _prim(@cvar-wait-evt)
     val wait	: cvar -> unit = _prim(@cvar-wait)
 
   end
