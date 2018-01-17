@@ -206,9 +206,11 @@ structure VProcInit (* :
           (* end of initVPFields *)
 
           do VProc.@for-each-vproc(initVPFields / exh)
+          
           cont startLeadK (_ : PT.unit) = 
             return()
-          let act : PT.sched_act = apply mkAct (self / exh)
+            
+          let act : PT.sched_act = SchedulerAction.@pop-act(self)
           SchedulerAction.@run(self, act, startLeadK)
       ;
 
