@@ -111,6 +111,7 @@ structure SchedulerAction (* :
 	  let act : PT.sched_act = @pop-act(vp)
 #ifdef DIRECT_STYLE
       let _ : any = apply act (sg)
+      do Trap()
       return () (* unreachable *)
 #else
 	  throw act (sg)
@@ -124,6 +125,7 @@ structure SchedulerAction (* :
 	  let act : PT.sched_act = @pop-act(vp)
 #ifdef DIRECT_STYLE
       let _ : any = apply act (sg)
+      do Trap()
       return () (* unreachable *)
 #else
 	  throw act (sg)
