@@ -1,9 +1,9 @@
 (* cont.pml
  *
- * COPYRIGHT (c) 2013 The Manticore Project (http://manticore.cs.uchicago.edu)
+ * COPYRIGHT (c) 2018 The Manticore Project (http://manticore.cs.uchicago.edu)
  * All rights reserved.
  *
- * Continuations.
+ * Escape Continuations.
  *)
 
 structure Cont
@@ -12,7 +12,7 @@ structure Cont
 sig
 
 type 'a cont
-val callcc : ('a cont -> 'a) -> 'a
+val callec : ('a cont -> 'a) -> 'a
 val throw : 'a cont * 'a -> 'b
 
 end
@@ -23,9 +23,9 @@ struct
     _primcode (
         typedef cont_rep = cont(any);
 
-        define inline @callcc_impl (callccFun: fun (cont_rep / exh -> any) / exh : exh) : any =
+        define inline @callec_impl (callee: fun (cont_rep / exh -> any) / exh : exh) : any =
            cont currentContinuation (ccArg : any) = return (ccArg)
-           apply callccFun (currentContinuation / exh)
+           apply callee (currentContinuation / exh)
         ;
 
         define inline @throw_impl (arg: [cont_rep, any] / exh : exh) : any =
@@ -38,7 +38,7 @@ struct
 
 type 'a cont = _prim(cont_rep)
 
-val callcc : ('a cont -> 'a) -> 'a = _prim(@callcc_impl)
+val callec : ('a cont -> 'a) -> 'a = _prim(@callec_impl)
 val throw : 'a cont * 'a -> 'b = _prim(@throw_impl)
 
 end
