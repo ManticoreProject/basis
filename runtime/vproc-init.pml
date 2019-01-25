@@ -33,23 +33,26 @@ structure VProcInit (* :
 
 
 #ifdef DIRECT_STYLE
-      
+
       extern void* NewStack(void *, void *) __attribute__((alloc));
 
 #endif
 
 
 #ifndef DIRECT_STYLE
+    (********************
+    * CPS style codegen *
+    *********************)
 
     (* bootstrap the vproc for purely-sequential execution *)
       define @bootstrap-sequential ( / exh : exh) : () =
         let vp : vproc = host_vproc
-        
+
         (**** vp->schedCont ****)
-        cont schedCont (k : PT.fiber) = 
+        cont schedCont (k : PT.fiber) =
           throw k(UNIT)
         do vpstore(VP_SCHED_CONT, vp, schedCont)
-        
+
         (**** vp->shutdownCont ****)
         cont shutdownCont (_ : unit) =
           do ccall VProcExit(vp)
@@ -63,7 +66,7 @@ structure VProcInit (* :
         do vpstore(CURRENT_FLS, vp, fls)
 
         (**** vp->dummyK ****)
-        cont dummyK (x : unit) = 
+        cont dummyK (x : unit) =
             let _ : unit = SchedulerAction.@stop()
             return()
         let dummyK : PT.fiber = promote(dummyK)
@@ -72,16 +75,19 @@ structure VProcInit (* :
   ;
 
 #else
+      (***********************
+      * Direct-style codegen *
+      ************************)
 
   (* bootstrap the vproc for purely-sequential execution *)
       define @bootstrap-sequential ( / exh : exh) : () =
         let vp : vproc = host_vproc
-        
+
         (**** vp->schedCont ****)
-        fun schedCont (k : PT.fiber) : unit = 
+        fun schedCont (k : PT.fiber) : unit =
           throw k(UNIT)
         do vpstore(VP_SCHED_CONT, vp, schedCont)
-      
+
         (**** vp->shutdownCont ****)
         fun shutdownCont (_ : unit) : unit =
         do ccall VProcExit(vp)
@@ -95,7 +101,7 @@ structure VProcInit (* :
         do vpstore(CURRENT_FLS, vp, fls)
 
         (**** vp->dummyK ****)
-        fun dummyK (x : unit) : unit = 
+        fun dummyK (x : unit) : unit =
             let _ : unit = SchedulerAction.@stop()
             return(UNIT)
         let dummyK : fun(unit / -> unit) = promote(dummyK)
@@ -118,8 +124,12 @@ structure VProcInit (* :
           fun initVPFields (vp : vproc / exh : exh) : () =
 
   #ifndef DIRECT_STYLE
+      (********************
+      * CPS style codegen *
+      *********************)
+
               (**** vp->schedCont ****)
-            cont schedCont (k : PT.fiber) = 
+            cont schedCont (k : PT.fiber) =
               do assert(NotEqual(k, nil))
               SchedulerAction.@forward(PT.PREEMPT(k))
 
@@ -127,7 +137,7 @@ structure VProcInit (* :
             do vpstore(VP_SCHED_CONT, vp, schedCont)
 
               (**** vp->dummyK ****)
-            cont dummyK (x : unit) = 
+            cont dummyK (x : unit) =
               let _ : unit = SchedulerAction.@stop()
               return()
 
@@ -140,7 +150,7 @@ structure VProcInit (* :
               do assert(Equal(vp, host_vproc))
               let cnt : int = I32FetchAndAdd(&0(shutdownCnt), ~1)
               fun wait () : () =
-                if I32Eq (#0(shutdownCnt), 0) 
+                if I32Eq (#0(shutdownCnt), 0)
                   then do ccall VProcExit(vp)
                        return ()
                   else do Pause()
@@ -151,8 +161,11 @@ structure VProcInit (* :
             do vpstore(VP_SHUTDOWN_CONT, vp, shutdownCont)
 
   #else
+        (***********************
+        * Direct-style codegen *
+        ************************)
 
-            fun schedCont (k : PT.fiber) : () = 
+            fun schedCont (k : PT.fiber) : () =
               do assert(NotEqual(k, nil))
               do SchedulerAction.@forward(PT.PREEMPT(k))
               return ()
@@ -160,7 +173,7 @@ structure VProcInit (* :
             let schedCont : fun(PT.fiber / -> ) = promote(schedCont)
             do vpstore(VP_SCHED_CONT, vp, schedCont)
 
-              (**** vp->dummyK ****)  
+              (**** vp->dummyK ****)
               (* dummyK field is treated as a multi-shot continuation in RTS *)
             fun initDummyK (_ : unit) : unit =
               let dummyK : PT.fiber = ccall NewStack (vp, initDummyK)
@@ -179,7 +192,7 @@ structure VProcInit (* :
               do assert(Equal(vp, host_vproc))
               let cnt : int = I32FetchAndAdd(&0(shutdownCnt), ~1)
               fun wait () : () =
-                if I32Eq (#0(shutdownCnt), 0) 
+                if I32Eq (#0(shutdownCnt), 0)
                   then do ccall VProcExit(vp)
                        return ()
                   else do Pause()
@@ -206,10 +219,10 @@ structure VProcInit (* :
           (* end of initVPFields *)
 
           do VProc.@for-each-vproc(initVPFields / exh)
-          
-          cont startLeadK (_ : PT.unit) = 
+
+          cont startLeadK (_ : PT.unit) =
             return()
-            
+
           let act : PT.sched_act = SchedulerAction.@pop-act(self)
           SchedulerAction.@run(self, act, startLeadK)
       ;
