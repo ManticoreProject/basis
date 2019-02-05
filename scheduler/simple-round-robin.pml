@@ -83,9 +83,9 @@ structure RoundRobin =
      *)
 
       fun checkLandingPad (i : int) : () =
-        
-        fun lp2 (j : int) : () =
-            if I32Gt (j, 500) then return () else apply lp2 (I32Add (j, 1))
+
+        fun addSpinLoop (j : int) : () =
+            if I32Gt (j, 500) then return () else apply addSpinLoop (I32Add (j, 1))
 
         let w : bool = VProcQueue.@poll-landing-pad-in-atomic (self)
 
@@ -93,7 +93,7 @@ structure RoundRobin =
             of true => return ()
              | false => (* spin for a bit *)
                        do Pause ()
-                       do apply lp2 (0)
+                       do apply addSpinLoop (0)
                        (* try again *)
                        if I32Gt (i, 2000) then
                          return ()

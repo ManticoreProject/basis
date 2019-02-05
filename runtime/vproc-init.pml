@@ -149,13 +149,13 @@ structure VProcInit (* :
             cont shutdownCont (_ : unit) =
               do assert(Equal(vp, host_vproc))
               let cnt : int = I32FetchAndAdd(&0(shutdownCnt), ~1)
-              fun wait () : () =
+              fun waitForShutdown () : () =
                 if I32Eq (#0(shutdownCnt), 0)
                   then do ccall VProcExit(vp)
                        return ()
                   else do Pause()
-                       apply wait()
-              apply wait()
+                       apply waitForShutdown()
+              apply waitForShutdown()
 
             let shutdownCont : PT.fiber = promote(shutdownCont)
             do vpstore(VP_SHUTDOWN_CONT, vp, shutdownCont)
@@ -191,13 +191,13 @@ structure VProcInit (* :
             fun shutdownCont (_ : unit) : () =
               do assert(Equal(vp, host_vproc))
               let cnt : int = I32FetchAndAdd(&0(shutdownCnt), ~1)
-              fun wait () : () =
+              fun waitForShutdown () : () =
                 if I32Eq (#0(shutdownCnt), 0)
                   then do ccall VProcExit(vp)
                        return ()
                   else do Pause()
-                       apply wait()
-              apply wait()
+                       apply waitForShutdown()
+              apply waitForShutdown()
 
             let shutdownCont : fun(unit / -> ) = promote(shutdownCont)
             do vpstore(VP_SHUTDOWN_CONT, vp, shutdownCont)
