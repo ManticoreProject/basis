@@ -4,5 +4,6 @@ ann "cpp" "../include/prim.def,../include/runtime-offsets.def,../include/debug.d
 	prim-event.pml
 	cvar.pml
 	alt-prim-chan.pml
+	vproc-extras.pml
 	(* prim-chan.pml *)
 end
