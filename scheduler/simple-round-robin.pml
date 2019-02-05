@@ -15,8 +15,8 @@ structure RoundRobin =
     _primcode(
 
     (* top-level thread scheduler that uses a round robin policy *)
-  define @round-robin (x : unit / exh : exh) : unit = 
-    fun mkSwitch (self : vproc / exh : exh) : PT.sched_act = 
+  define @round-robin (x : unit / exh : exh) : unit =
+    fun mkSwitch (self : vproc / exh : exh) : PT.sched_act =
 
           (* variable to record the wall-clock time of the scheduling quantum *)
       let currTime : ![long] = alloc (0:long)
@@ -60,11 +60,11 @@ structure RoundRobin =
         end
         (* end wakeupSleepingThreads *)
 
-    (* 
+    (*
       Here we wait until either a thread wakes from a sleeping state or an ready thread
       has been placed on the landing pad by a remote vproc.
 
-      void waitForWork () 
+      void waitForWork ()
       {
         while(1) {
     for (int i = 0; i < 2000; i++) {
@@ -82,30 +82,30 @@ structure RoundRobin =
 
      *)
 
-      fun checkLandingPad (i : int) : () = 
+      fun checkLandingPad (i : int) : () =
         
-        fun lp2 (j : int) : () = 
+        fun lp2 (j : int) : () =
             if I32Gt (j, 500) then return () else apply lp2 (I32Add (j, 1))
 
         let w : bool = VProcQueue.@poll-landing-pad-in-atomic (self)
 
           case w
-            of true => return () 
+            of true => return ()
              | false => (* spin for a bit *)
                        do Pause ()
                        do apply lp2 (0)
                        (* try again *)
                        if I32Gt (i, 2000) then
                          return ()
-                       else 
+                       else
                          apply checkLandingPad (I32Add (i, 1))
           end
 
-      fun waitForWork () : () =      
+      fun waitForWork () : () =
         do apply checkLandingPad (0)
 
         let w : bool = apply wakeupSleepingThreads ()
-      
+
         case w
           of true => return ()
            | false => (* sleep and then try again *)
@@ -118,17 +118,17 @@ structure RoundRobin =
       fun dispatch (act : PT.sched_act) : PT.sched_act =
         let item : Option.option = VProcQueue.@dequeue-in-atomic(self)
           case item
-            of Option.NONE => 
+            of Option.NONE =>
                 do apply waitForWork ()
                 apply dispatch (act)
             | Option.SOME(qitem : VProcQueue.queue_item) =>
-                do SchedulerAction.@dispatch-from-atomic (self, act, 
+                do SchedulerAction.@dispatch-from-atomic (self, act,
                                   SELECT(FIBER_OFF, qitem), SELECT(FLS_OFF, qitem))
                 return (act)  (* unreachable *)
           end
 
 #ifdef DIRECT_STYLE
-      fun switch (s : PT.signal) : PT.sched_act = 
+      fun switch (s : PT.signal) : PT.sched_act =
 #else
       cont switch (s : PT.signal) =
 #endif
@@ -137,7 +137,7 @@ structure RoundRobin =
               (* We can safely assume that the current FLS is the one that signaled with STOP *)
               let _ : bool = CF.@done-comm-ops-in-atomic(self, true / exh)
               apply dispatch (switch)
-       
+
           | PT.PREEMPT (k : PT.fiber) =>
               let w : bool = CF.@done-comm-ops-in-atomic(self, false / exh)
               let fls : FLS.fls = FLS.@get-in-atomic (self)
@@ -149,7 +149,7 @@ structure RoundRobin =
               end
               let _ : bool = VProcQueue.@poll-landing-pad-in-atomic (self)
               let _ : bool = apply wakeupSleepingThreads ()
-              apply dispatch (switch) 
+              apply dispatch (switch)
 
           | PT.BLOCK (k : PT.fiber) =>
               let _ : bool = CF.@done-comm-ops-in-atomic(self, true / exh)
@@ -157,7 +157,7 @@ structure RoundRobin =
               do VProcQueue.@enqueue-in-atomic (self, fls, k)
               let _ : bool = VProcQueue.@poll-landing-pad-in-atomic (self)
               let _ : bool = apply wakeupSleepingThreads ()
-              apply dispatch (switch) 
+              apply dispatch (switch)
 
           | PT.SLEEP (k : PT.fiber, durationNs : long) =>
               let _ : bool = CF.@done-comm-ops-in-atomic(self, true / exh)
