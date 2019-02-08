@@ -138,8 +138,7 @@ structure VProcInit (* :
 
               (**** vp->dummyK ****)
             cont dummyK (x : unit) =
-              let _ : unit = SchedulerAction.@stop()
-              return()
+              SchedulerAction.@stop()
 
             let dummyK : PT.fiber = promote(dummyK)
             do vpstore(VP_DUMMYK, vp, dummyK)

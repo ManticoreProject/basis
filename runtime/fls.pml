@@ -8,11 +8,11 @@
  *
  *   - interfacing with the host vproc
  *     Each vproc is assigned one FLS object at a time. Any fiber running on the vproc is
- *     associated with this FLS. The @get field returns the FLS assigned to the host vproc, 
+ *     associated with this FLS. The @get field returns the FLS assigned to the host vproc,
  *     and the @set operation assigns a given FLS to the host vproc.
  *
  *   - pinning
- *     The @pin-to operation marks a fiber as pinned to a particular vproc. Once pinned, a 
+ *     The @pin-to operation marks a fiber as pinned to a particular vproc. Once pinned, a
  *     fiber should not migrate. The @pin-info operation accesses the pinning information,
  *     which is a valid vproc id if the FLS is pinned. The @pin-to operation marks a given
  *     FLS as pinned to a given vproc id.
@@ -26,7 +26,7 @@
  *     The dictionary supports extending FLS with arbitrary key / value pairs. In addition, there
  *     are some built-in keys:
  *       -- Topologies (see basis/topologies/)
- * 
+ *
  * The representation of FLS contains the fields below.
  *
  *   - vproc id
@@ -43,7 +43,7 @@
  *
  *   - dictionary
  *     List of key / value pairs.
- *     
+ *
  *)
 
 structure FLS :
@@ -149,8 +149,8 @@ structure FLS :
         let elt : [[int], any] = alloc(k, List.nil)
         let dict : List.list = CONS(elt, Topologies.EMPTY)
 
-	let ret : [int, List.list] = alloc(I32Add(DICT_BUILTIN_TOPOLOGY, 1), dict)
-	return(ret)
+        let ret : [int, List.list] = alloc(I32Add(DICT_BUILTIN_TOPOLOGY, 1), dict)
+        return(ret)
       ;
 
     (* create fls *)
@@ -244,7 +244,7 @@ structure FLS :
 	  let fls : fls = @get()
 	  let vprocId : int = @pin-info(fls / exh)
 	   let fls : fls = alloc(vprocId, Option.SOME(ite), SELECT(DICT_COUNTER_OFF, fls), SELECT(DICT_OFF, fls), SELECT(DONE_COMM_OFF, fls))
-	  do @set(fls)  
+	  do @set(fls)
 	  return()
 	;
 
