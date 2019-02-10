@@ -8,7 +8,6 @@ structure RoundRobin =
   struct
 
     structure PT = PrimTypes
-    structure CF = Classify
 
 #include "vproc-queue.def"
 
@@ -135,24 +134,16 @@ structure RoundRobin =
         case s
           of PT.STOP =>
               (* We can safely assume that the current FLS is the one that signaled with STOP *)
-              let _ : bool = CF.@done-comm-ops-in-atomic(self, true / exh)
               apply dispatch (switch)
 
           | PT.PREEMPT (k : PT.fiber) =>
-              let w : bool = CF.@done-comm-ops-in-atomic(self, false / exh)
               let fls : FLS.fls = FLS.@get-in-atomic (self)
-              do case w
-                of true => do VProcQueue.@secondary-enqueue-in-atomic(self, fls, k)
-                            return()
-                | false => do VProcQueue.@enqueue-in-atomic (self, fls, k)
-                            return()
-              end
+              do VProcQueue.@enqueue-in-atomic (self, fls, k)
               let _ : bool = VProcQueue.@poll-landing-pad-in-atomic (self)
               let _ : bool = apply wakeupSleepingThreads ()
               apply dispatch (switch)
 
           | PT.BLOCK (k : PT.fiber) =>
-              let _ : bool = CF.@done-comm-ops-in-atomic(self, true / exh)
               let fls : FLS.fls = FLS.@get-in-atomic (self)
               do VProcQueue.@enqueue-in-atomic (self, fls, k)
               let _ : bool = VProcQueue.@poll-landing-pad-in-atomic (self)
@@ -160,7 +151,6 @@ structure RoundRobin =
               apply dispatch (switch)
 
           | PT.SLEEP (k : PT.fiber, durationNs : long) =>
-              let _ : bool = CF.@done-comm-ops-in-atomic(self, true / exh)
               let fls : FLS.fls = FLS.@get-in-atomic (self)
               do apply addToSleepingList (fls, k, durationNs)
               apply dispatch (switch)
