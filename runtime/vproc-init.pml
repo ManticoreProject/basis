@@ -173,16 +173,10 @@ structure VProcInit (* :
             do vpstore(VP_SCHED_CONT, vp, schedCont)
 
               (**** vp->dummyK ****)
-              (* dummyK field is treated as a multi-shot continuation in RTS *)
-            fun initDummyK (_ : unit) : unit =
-              let dummyK : PT.fiber = ccall NewStack (vp, initDummyK)
-              let dummyK : PT.fiber = promote(dummyK)
-              do vpstore(VP_DUMMYK, vp, dummyK)
-              do SchedulerAction.@stop()
-              return (UNIT)
-
-            let dummyK : PT.fiber = ccall NewStack (vp, initDummyK)
-            let dummyK : PT.fiber = promote(dummyK)
+            fun dummyK (x : unit) : unit =
+                let _ : unit = SchedulerAction.@stop()
+                return(UNIT)
+            let dummyK : fun(unit / -> unit) = promote(dummyK)
             do vpstore(VP_DUMMYK, vp, dummyK)
 
               (**** vp->shutdownCont ****)
