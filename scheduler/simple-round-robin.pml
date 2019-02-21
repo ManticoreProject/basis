@@ -82,7 +82,7 @@ structure RoundRobin =
 
      *)
 
-      fun checkLandingPad (i : int) : () =
+      fun checkLandingPad (i : int) : bool =
 
         fun addSpinLoop (j : int) : () =
             if I32Gt (j, 500) then return () else apply addSpinLoop (I32Add (j, 1))
@@ -90,27 +90,29 @@ structure RoundRobin =
         let w : bool = VProcQueue.@poll-landing-pad-in-atomic (self)
 
           case w
-            of true => return ()
+            of true => return (true)
              | false => (* spin for a bit *)
                        do Pause ()
                        do apply addSpinLoop (0)
                        (* try again *)
                        if I32Gt (i, 2000) then
-                         return ()
+                         return (false)
                        else
                          apply checkLandingPad (I32Add (i, 1))
           end
 
       fun waitForWork () : () =
-        do apply checkLandingPad (0)
+        let foundWork : bool = apply checkLandingPad (0)
 
-        let w : bool = apply wakeupSleepingThreads ()
-
-        case w
+        case foundWork
           of true => return ()
-           | false => (* sleep and then try again *)
-                    let _ : bool = VProc.@nanosleep-in-atomic (self, 1000000:long)
-                    apply waitForWork ()
+           | false => let woken : bool = apply wakeupSleepingThreads ()
+                      case woken
+                        of true => return ()
+                         | false => (* sleep and then try again *)
+                                    let _ : bool = VProc.@nanosleep-in-atomic (self, 1000000:long)
+                                    apply waitForWork ()
+                      end
         end
       (* end waitForWork *)
 
