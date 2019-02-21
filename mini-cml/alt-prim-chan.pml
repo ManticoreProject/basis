@@ -32,6 +32,12 @@ structure PrimChan (*: sig
 
     _primcode (
 
+      #ifdef DIRECT_STYLE
+
+            extern void* NewStack(void *, void *) __attribute__((alloc));
+
+      #endif
+
       (* the representation of a CML thread suspended on a channel *)
         typedef sendq_item = ![
             PEvt.event_state,                (* 0: event-instance status flag *)
@@ -188,9 +194,10 @@ structure PrimChan (*: sig
                                             self, SELECT(SENDQ_VPROC, item),
                                             SELECT(SENDQ_FLS, item),
                                             SELECT(SENDQ_CONT, item))
+                                        let msg : any = SELECT(SENDQ_MSG, item)
                                         do SchedulerAction.@atomic-end (self)
                                         (* in *)
-                                          return (SELECT(SENDQ_MSG, item))
+                                          return (msg)
                                     | PEvt.CLAIMED => (* may be claimed, so spin *)
                                         do Pause()
                                         apply matchLp()
@@ -200,8 +207,7 @@ structure PrimChan (*: sig
                             (* in *)
                               apply matchLp ()
                       else
-                        cont recvK (x : any) = return (x)
-                        (* in *)
+                        fun doRecv (recvK : cont(any)) : unit =
                           let fls : FLS.fls = FLS.@get-in-atomic(self)
                           let flg : PEvt.event_state = alloc(PEvt.WAITING)
                           do @chan-enqueue-recv (ch, flg, self, fls, recvK)
@@ -209,6 +215,18 @@ structure PrimChan (*: sig
                           (* in *)
                             do SchedulerAction.@stop-from-atomic(self)
                             return (UNIT) (* unreachable *)
+                        (* in *)
+                          cont recvK (x : any) = return (x)
+                          (* in *)
+                          #ifdef DIRECT_STYLE
+                            (* need to perform `doRecv` on a diff stack *)
+                            let diffStack : cont(cont(any)) = ccall NewStack (self, doRecv)
+                            throw diffStack (recvK)
+                          #else
+                            (* immutable stack version *)
+                            apply doRecv (recvK)
+                          #endif
+
             (* in *)
               apply tryLp ()
           ;
@@ -250,7 +268,17 @@ structure PrimChan (*: sig
                                           else (* sending to a remote thread *)
                                             do SchedulerAction.@atomic-end (self)
                                             let k : cont(any) = SELECT(RECVQ_CONT, item)
+
+                                          #ifdef DIRECT_STYLE
+                                            (* the throw to k must happen on a different stack *)
+                                            fun invokeRecvCont (_ : unit) : unit =
+                                              throw k (msg)
+
+                                            let recvk : cont(unit) = ccall NewStack(self, invokeRecvCont)
+                                          #else
+                                            (* immutable stack version *)
                                             cont recvk (_ : unit) = throw k (msg)
+                                          #endif
                                             (* in *)
                                               do VProcQueue.@enqueue-on-vproc (
                                                     SELECT(RECVQ_VPROC, item), SELECT(RECVQ_FLS, item),
@@ -265,8 +293,7 @@ structure PrimChan (*: sig
                             (* in *)
                               apply matchLp ()
                         else
-                          cont sendK (_ : unit) = return (UNIT)
-                          (* in *)
+                          fun doSend (sendK : cont(unit)) : unit =
                             let fls : FLS.fls = FLS.@get-in-atomic(self)
                             let flg : PEvt.event_state = alloc(PEvt.WAITING)
                             do @chan-enqueue-send (ch, flg, msg, self, fls, sendK)
@@ -274,6 +301,20 @@ structure PrimChan (*: sig
                             (* in *)
                               do SchedulerAction.@stop-from-atomic(self)
                               return (UNIT) (* unreachable *)
+                          (* in *)
+                            cont sendK (_ : unit) = return (UNIT)
+                            (* in *)
+                          #ifdef DIRECT_STYLE
+                              (* we need to perform `doSend` on a new stack *)
+                              let diffStack : cont(cont(unit)) = ccall NewStack (self, doSend)
+                              throw diffStack (sendK) (* abandons current stack *)
+                          #else
+                              (* immutable stack version *)
+                              apply doSend (sendK)
+                          #endif
+
+                          (* in *)
+
               (* in *)
                 apply tryLp ()
         ;
