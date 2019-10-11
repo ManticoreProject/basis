@@ -1,0 +1,4 @@
+
+
+(* keep in sync with parallel-rt/gc/internal-heap.h *)
+#define STACK_MUTEX_OFFSET  104
