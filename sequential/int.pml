@@ -18,6 +18,7 @@ structure Int =
       extern void *M_IntFromString (void *) __attribute__((alloc,pure));
       extern int M_CeilingLg (int) __attribute__((pure));
       extern int M_FloorLg (int) __attribute__((pure));
+      extern int M_IntIdentity(int) __attribute__((pure));
 
       define inline @to-string (n : ml_int / exh : exh) : ml_string =
 	  let res : ml_string = ccall M_IntToString (#0(n))
@@ -42,12 +43,21 @@ structure Int =
       define inline @to-long (n : ml_int / exh : exh) : ml_long =
 	  return(alloc(I32ToI64(#0(n))))
 	;
+
+    define inline @get-identity(n : ml_int / exh : exh) : ml_int =
+      let res : int = ccall M_IntIdentity(#0(n))
+      return (alloc(res))
+    ;
+
     )
 
     val toString : int -> string = _prim(@to-string)
     val fromString : string -> int Option.option = _prim(@from-string)
 
     val toLong : int -> long = _prim(@to-long)
+
+    (* NOTE: this exists for performance testing of FFI calls *)
+    val identity : int -> int = _prim(@get-identity)
 
 (* FIXME: why is this function here? It is not part of the INT API *)
     val ceilingLg : int -> int = _prim(@ceiling-lg)
@@ -61,9 +71,9 @@ structure Int =
     fun max (x, y) = if x < y then y else x
     fun min (x, y) = if x < y then x else y
 
-    fun compare (x, y) = 
-      if x = y then EQUAL 
-      else if x < y then LESS 
+    fun compare (x, y) =
+      if x = y then EQUAL
+      else if x < y then LESS
       else GREATER
 
     fun sign n =
@@ -72,7 +82,7 @@ structure Int =
       else 1
 
     fun sameSign (m, n) = (sign(m) = sign(n))
-    
+
     (* Manticore's div/mod use hardware semantics for divide, so they're equiv to quot/rem *)
     fun quot (a, b) = a div b
     fun rem (a, b) = a mod b
