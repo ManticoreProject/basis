@@ -20,7 +20,8 @@ structure Double =
 	extern double M_Atan (double) __attribute__((pure));
 	extern double M_Atan2 (double, double) __attribute__((pure));
         extern long M_Lround (double) __attribute__((pure));
-        extern double M_Floor (double) __attribute__((pure));
+        extern double M_DFloor (double) __attribute__((pure));
+        extern int M_IFloor (double) __attribute__((pure));
 	extern void *M_DoubleToString (double) __attribute__((alloc,pure));
 	extern void *M_DoubleFromString (void*) __attribute__((alloc,pure));
     )
@@ -53,8 +54,12 @@ structure Double =
             let res : long = ccall M_Lround (#0(x))
               return (alloc(res));
 
-        define inline @double-floor (x : ml_double / exh : exh) : ml_double =
-            let res : double = ccall M_Floor (#0(x))
+        define inline @double-dfloor (x : ml_double / exh : exh) : ml_double =
+            let res : double = ccall M_DFloor (#0(x))
+              return (alloc(res));
+
+        define inline @double-ifloor (x : ml_double / exh : exh) : ml_int =
+            let res : int = ccall M_IFloor (#0(x))
               return (alloc(res));
 
 
@@ -91,7 +96,8 @@ structure Double =
     val atan : double -> double = _prim (@double-atan)
     val atan2 : double * double -> double = _prim (@double-atan2)
     val round : double -> long = _prim (@double-lround)
-    val floor : double -> double = _prim (@double-floor)
+    val doubleFloor : double -> double = _prim (@double-dfloor)
+    val intFloor : double -> int = _prim (@double-ifloor)
     val sqrt : double -> double = _prim (@double-sqrt)
     val pow : (double * double) -> double = _prim (@double-pow)
     val toString : double -> string = _prim(@to-string)
