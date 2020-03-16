@@ -60,7 +60,7 @@ structure List =
 
     fun app f ls = let
 	  fun lp xs = (
-	        case xs 
+	        case xs
 		 of nil => ()
 		  | CONS(x, xs) => (
 		      f x;
@@ -81,9 +81,9 @@ structure List =
 	  end
 
     fun nth (l, n) = let
-	fun loop (es, n) = 
+	fun loop (es, n) =
 	    if n = 0 then hd es
-	    else loop(tl es, n-1)          
+	    else loop(tl es, n-1)
          in
             if n >= 0 then loop (l,n) else raise Fail "subscript"
          end
@@ -131,7 +131,7 @@ structure List =
       end
 
     fun exists pred xs = let
-      fun lp xs = 
+      fun lp xs =
        (case xs
 	  of nil => false
 	   | (h::t) => (pred h) orelse (lp t)
@@ -139,6 +139,17 @@ structure List =
       in
         lp xs
       end
+
+    fun find pred lst = let
+        fun loop lst = (case lst
+           of nil => Option.NONE
+            | (x::l) => if pred x
+                         then Option.SOME x
+                      else loop l
+          (* end case *))
+     in
+        loop lst
+     end
 
     fun zip (xs, ys) = let
       fun lp (xs, ys, acc) =
@@ -170,11 +181,11 @@ structure List =
 	 end
 
     fun filter f xs = let
-      fun lp arg = 
+      fun lp arg =
        (case arg
 	  of (nil, acc) => rev acc
 	   | (x::xs, acc) => lp (xs, if f x then x::acc else acc)
-         (* end case *)) 
+         (* end case *))
       in
         lp (xs, nil)
       end
@@ -203,7 +214,7 @@ structure List =
             if n >= 0 then loop (l,n) else (raise Fail "subscript")
           end
 
-    fun tabulate (len, genfn) = 
+    fun tabulate (len, genfn) =
           if len < 0 then raise Fail "size"
           else let
             fun loop n = if n = len then nil
@@ -211,7 +222,7 @@ structure List =
             in loop 0 end
 
     fun partition pred l = let
-          fun loop (l,trueList,falseList) = 
+          fun loop (l,trueList,falseList) =
 	      (case l
 		of nil => (rev trueList, rev falseList)
 		 | h::t =>
