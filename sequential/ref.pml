@@ -43,7 +43,7 @@ structure Ref =
       let b : ref = #1(args)
       let aAddr : addr(any) = (addr(any))&0(a)
       let bAddr : addr(any) = (addr(any))&0(b)
-      if AdrEq(aAddr, aAddr)
+      if AdrEq(aAddr, bAddr)
         then return(true)
         else return(false)
       ;
