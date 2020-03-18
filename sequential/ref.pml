@@ -32,10 +32,21 @@ structure Ref =
         ;
 
     (* read the value out of the cell *)
-      define inline @get (r: ref / exh: exh) : any = 
+      define inline @get (r: ref / exh: exh) : any =
         let x : any = #0(r)
         return(x)
         ;
+
+    (* pointer equality test, which is needed for polymorphic equality over refs *)
+    define inline @pointerEq (args : [ref, ref] / exh: exh) : bool =
+      let a : ref = #0(args)
+      let b : ref = #1(args)
+      let aAddr : addr(any) = (addr(any))&0(a)
+      let bAddr : addr(any) = (addr(any))&0(b)
+      if AdrEq(aAddr, aAddr)
+        then return(true)
+        else return(false)
+      ;
     )
 
     type 'a ref = _prim(ref)
@@ -43,5 +54,6 @@ structure Ref =
     val new : 'a -> 'a ref        = _prim(@new)
     val set : 'a ref * 'a -> unit = _prim(@set)
     val get : 'a ref -> 'a        = _prim(@get)
+    val pointerEq : 'a ref * 'a ref -> bool = _prim(@pointerEq)
 
   end
