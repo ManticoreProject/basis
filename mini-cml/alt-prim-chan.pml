@@ -326,4 +326,7 @@ structure PrimChan (*: sig
     val new : unit -> 'a chan                = _prim (@chan-new)
     val send : ('a chan * 'a) -> unit        = _prim (@chan-send)
     val recv : 'a chan -> 'a                = _prim (@chan-recv)
+
+    fun spawnThread (f : unit -> unit) = spawn f()
+
   end
