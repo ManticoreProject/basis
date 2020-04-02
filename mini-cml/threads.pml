@@ -32,20 +32,24 @@ structure Threads (*: sig
 		fun thd_fun (x : PT.unit) : PT.unit =
 		  let _ : PT.unit = apply f (UNIT / exh)
 	      do SchedulerAction.@stop ()
-	      throw exh (UNIT) (* unreachable *) 
+        let top : any = (any)UNIT
+        let dummyExh : cont(unit) = (cont(unit))top
+	      throw dummyExh (UNIT) (* unreachable *)
 
 	    let vp : vproc = host_vproc
         let stkCont : PT.fiber = ccall NewStack (vp, thd_fun)
         return (stkCont)
 #else
-		cont thd (x : PT.unit) = 
+		cont thd (x : PT.unit) =
 	      let _ : PT.unit = apply f (UNIT / exh)
 	      do SchedulerAction.@stop ()
-	      throw exh (UNIT) (* unreachable *)
+        let top : any = (any)UNIT
+        let dummyExh : cont(unit) = (cont(unit))top
+	      throw dummyExh (UNIT) (* unreachable *)
 	    (* in *)
 	    return (thd)
 #endif
-	    
+
 	  ;
 
       (* spawn a new thread on the local vproc.
@@ -99,4 +103,3 @@ structure Threads (*: sig
     val exit : unit -> 'a = _prim(@thread-exit)
 
   end
-
